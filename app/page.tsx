@@ -10,7 +10,7 @@ export default function Home() {
     harvestDate: "",
   });
 
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<any[]>([]);
 
   const handleChange = (e: any) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -47,16 +47,16 @@ export default function Home() {
         </button>
       </form>
 
-      {result && (
-        <div className="mt-6 bg-white p-6 rounded shadow">
-          <h2 className="text-xl font-semibold">Recommendation</h2>
-          <p><strong>Best Mandi:</strong> {result.mandi}</p>
-          <p><strong>Predicted Price:</strong> ₹{result.price}</p>
-          <p><strong>Net Profit Estimate:</strong> ₹{result.netProfit}</p>
-          <p><strong>Spoilage Risk:</strong> {result.spoilageRisk}</p>
-          <p><strong>Reason:</strong> {result.reason}</p>
-        </div>
-      )}
+      {result.length > 0 && result.map((item: any, index: number) => (
+  <div key={index} className="mt-4 bg-white p-6 rounded shadow">
+    <h2 className="text-lg font-semibold">Option {index + 1}</h2>
+    <p><strong>Mandi:</strong> {item.mandi}</p>
+    <p><strong>Predicted Price:</strong> ₹{item.predictedPrice}</p>
+    <p><strong>Net Profit:</strong> ₹{item.netProfit}</p>
+    <p><strong>Spoilage Risk:</strong> {item.spoilageRisk}</p>
+  </div>
+))}
+      
     </div>
   );
 }

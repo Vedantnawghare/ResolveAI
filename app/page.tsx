@@ -1,4 +1,6 @@
 "use client";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
+
 import { useState } from "react";
 
 export default function Home() {
@@ -54,8 +56,23 @@ export default function Home() {
     <p><strong>Predicted Price:</strong> ₹{item.predictedPrice}</p>
     <p><strong>Net Profit:</strong> ₹{item.netProfit}</p>
     <p><strong>Spoilage Risk:</strong> {item.spoilageRisk}</p>
+    <p><strong>Transport Cost:</strong> ₹{item.transportCost}</p>
   </div>
 ))}
+{result.length > 0 && (
+  <div className="mt-8 bg-white p-6 rounded shadow">
+    <h2 className="text-lg font-semibold mb-4">Profit Comparison</h2>
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart data={result}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="mandi" />
+        <YAxis />
+        <Tooltip />
+        <Bar dataKey="netProfit" />
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
+)}
       
     </div>
   );

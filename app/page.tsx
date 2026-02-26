@@ -68,13 +68,13 @@ export default function Home() {
   <option value="Nanded">Nanded</option>
   <option value="Jalgaon">Jalgaon</option>
 </select>
-        <input name="soilQuality" placeholder="Soil Quality (1-10)" onChange={handleChange} className="w-full p-2 border rounded" />
+        {/* <input name="soilQuality" placeholder="Soil Quality (1-10)" onChange={handleChange} className="w-full p-2 border rounded" /> */}
         <select name="storageType" onChange={handleChange} className="w-full p-2 border rounded">
           <option value="">Select Storage Type</option>
           <option value="cold">Cold Storage</option>
           <option value="normal">Normal Storage</option>
         </select>
-        <input type="date" name="harvestDate" onChange={handleChange} className="w-full p-2 border rounded" />
+        
 
         <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">
           Get Recommendation
@@ -92,7 +92,10 @@ export default function Home() {
   {item.explanation}
 </p>
     <p><strong>Transport Cost:</strong> ₹{item.transportCost}</p>
+    <p><strong>Harvest Window:</strong> {item.harvestWindow}</p>
+<p><strong>Harvest Advice:</strong> {item.harvestAdvice}</p>
   </div>
+  
 ))}
 {result.length > 0 && (
   <div className="mt-8 bg-white p-6 rounded shadow">

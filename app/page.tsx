@@ -218,54 +218,75 @@ export default function Home() {
         </form>
 
         {/* Results */}
-        {result.length > 0 && (
-          <div className="mt-8 space-y-6">
-            {result.map((item: any, index: number) => (
-              <div key={index} className="bg-white p-6 rounded shadow">
-                {index === 0 && (
-                  <div className="mb-4 p-4 bg-green-100 rounded">
-                    <h2 className="text-xl font-bold text-green-800">
-                      {t.bestDecision}
-                    </h2>
-                    <p className="text-lg">
-                      {cityOptions[item.mandi]?.[language] || item.mandi}
-                    </p>
-                  </div>
-                )}
+        {result.length > 0 &&
+          result.map((item: any, index: number) => (
+            <div
+              key={index}
+              className="mt-6 bg-white p-6 rounded-xl shadow-lg border"
+            >
+              <h2 className="text-xl font-bold mb-2">
+                Best Option {index + 1}
+              </h2>
 
-                <p>
-                  <strong>{t.expectedProfit}:</strong> ₹{item.netProfit}
-                </p>
+              <p><strong>Mandi:</strong> {item.mandi}</p>
+              <p><strong>Predicted Price:</strong> ₹{item.predictedPrice}</p>
+              <p className="text-green-600 font-semibold">
+                Net Profit: ₹{item.netProfit}
+              </p>
 
-                <p>
-                  <strong>{t.predictedPrice}:</strong> ₹{item.predictedPrice}
-                </p>
+              <p><strong>Transport Cost:</strong> ₹{item.transportCost}</p>
+              <p>
+                <strong>Spoilage Risk:</strong>{" "}
+                <span
+                  className={
+                    item.spoilageRisk === "Low"
+                      ? "text-green-600"
+                      : item.spoilageRisk === "Medium"
+                      ? "text-yellow-600"
+                      : "text-red-600"
+                  }
+                >
+                  {item.spoilageRisk}
+                </span>
+              </p>
 
-                <p>
-                  <strong>{t.transportCost}:</strong> ₹{item.transportCost}
-                </p>
-
-                <p>
-                  <strong>{t.spoilageRisk}:</strong> {item.spoilageRisk}
-                </p>
-
-                <p>
-                  <strong>{t.harvestAdvice}:</strong>{" "}
-                  {translateAdvice(item.harvestAdvice)}
-                </p>
-
-                <p>
-                  <strong>{t.storageAdvice}:</strong>{" "}
-                  {translateAdvice(item.preservationAdvice)}
-                </p>
-
-                <p className="mt-2 text-gray-600 text-sm">
-                  {item.explanation}
+              <div className="mt-4 p-3 bg-gray-100 rounded">
+                <p className="font-semibold">Harvest Advice:</p>
+                <p>{item.harvestAdvice}</p>
+                <p className="text-sm text-gray-600">
+                  Recommended Window: {item.harvestWindow}
                 </p>
               </div>
-            ))}
-          </div>
-        )}
+
+              {/* Preservation Ranking */}
+              <div className="mt-4">
+                <h3 className="font-semibold mb-2">
+                  Preservation Options (Ranked)
+                </h3>
+
+                {item.preservationOptions.map(
+                  (option: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className={`p-3 mb-2 rounded ${
+                        idx === 0
+                          ? "bg-green-100 border border-green-500"
+                          : "bg-gray-50"
+                      }`}
+                    >
+                      <p className="font-medium">
+                        {idx === 0 ? "⭐ Best Option: " : ""}
+                        {option.method}
+                      </p>
+                      <p>Cost: ₹{option.cost}</p>
+                      <p>Risk Reduction: {option.riskReduction}%</p>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          ))}
+
       </div>
     </div>
   );

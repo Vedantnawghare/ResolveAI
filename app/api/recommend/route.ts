@@ -34,7 +34,7 @@ export async function POST(req: Request) {
 
   const humidity = await getWeatherImpact(city);
 
-  // 🟢 Auto Soil Estimation (District Based)
+ 
   const districtSoilMap: Record<string, number> = {
     Nagpur: 7,
     Pune: 8,
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
 
   const storageModifier = storageType === "cold" ? 0.5 : 1;
 
-  // 🟢 Distance Matrix
+  
   const cityDistanceMatrix: Record<string, Record<string, number>> = {
     Nagpur: { Nagpur: 0, Pune: 250, Mumbai: 300, Nashik: 220, Kolhapur: 350 },
     Pune: { Pune: 0, Mumbai: 150, Nashik: 200, Nagpur: 250 },
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
 
       const score = netProfit - (distance * 0.5);
 
-      // 🟢 Harvest Window Logic
+      
       let harvestAdvice = "";
       let harvestWindow = "";
 
@@ -111,7 +111,7 @@ export async function POST(req: Request) {
         harvestWindow = "Within 3-5 days";
       }
 
-      // 🟢 Preservation Suggestions
+     
       let preservationAdvice = "";
 
       if (spoilagePenalty > 400) {
@@ -125,7 +125,7 @@ export async function POST(req: Request) {
           "Low spoilage risk. Normal storage acceptable.";
       }
 
-      // 🟢 Simple Farmer Explanation
+    
       const trendPercentage = Math.round((market.trend - 1) * 100);
 
       const explanation = `

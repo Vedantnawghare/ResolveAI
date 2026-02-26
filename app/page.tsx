@@ -34,7 +34,23 @@ export default function Home() {
       <h1 className="text-3xl font-bold mb-6">AgriChain Advisor</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded shadow">
-        <input name="crop" placeholder="Crop" onChange={handleChange} className="w-full p-2 border rounded" />
+        <select
+  name="crop"
+  onChange={handleChange}
+  className="w-full p-2 border rounded"
+>
+  <option value="">Select Crop</option>
+  <option value="Cotton">Cotton</option>
+  <option value="Tomato">Tomato</option>
+  <option value="Onion">Onion</option>
+  <option value="Wheat">Wheat</option>
+  <option value="Rice">Rice</option>
+  <option value="Soybean">Soybean</option>
+  <option value="Sugarcane">Sugarcane</option>
+  <option value="Maize">Maize</option>
+  <option value="Tur Dal">Tur Dal</option>
+  <option value="Chana">Chana</option>
+</select>
         <select
   name="city"
   onChange={handleChange}
@@ -72,6 +88,9 @@ export default function Home() {
     <p><strong>Predicted Price:</strong> ₹{item.predictedPrice}</p>
     <p><strong>Net Profit:</strong> ₹{item.netProfit}</p>
     <p><strong>Spoilage Risk:</strong> {item.spoilageRisk}</p>
+    <p className="mt-2 text-sm text-gray-700 whitespace-pre-line">
+  {item.explanation}
+</p>
     <p><strong>Transport Cost:</strong> ₹{item.transportCost}</p>
   </div>
 ))}

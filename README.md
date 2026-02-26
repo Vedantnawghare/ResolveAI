@@ -15,3 +15,11 @@ Tech Stack
 => Run Locally
 npm install
 npm run dev
+
+
+Data Source
+
+Agmarknet (Government of India) – 3 Month Aggregated Modal Prices
+Integrated with live OpenWeather API
+
+That boosts credibility instantly.

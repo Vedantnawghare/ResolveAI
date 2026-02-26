@@ -1,23 +1,47 @@
 import { NextResponse } from "next/server";
 import { realMandiData } from "@/app/data/realMandiData";
 
-async function getWeatherImpact(city: string) {
+/* ---------------- WEATHER ENGINE ---------------- */
+
+async function getWeatherData(city: string) {
   try {
     const apiKey = process.env.OPENWEATHER_API_KEY;
-    if (!apiKey) return 50;
+    if (!apiKey) return { humidity: 50, rainfall: 0 };
 
     const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${city},IN&appid=${apiKey}`
+      `https://api.openweathermap.org/data/2.5/forecast?q=${city},IN&appid=${apiKey}&units=metric`
     );
 
     const data = await response.json();
-    if (data.cod !== 200) return 50;
 
-    return data.main?.humidity || 50;
-  } catch {
-    return 50;
+    if (data.cod !== "200") {
+      console.log("Weather API error:", data.message);
+      return { humidity: 50, rainfall: 0 };
+    }
+
+    const humidityAvg =
+      data.list.reduce(
+        (sum: number, item: any) => sum + item.main.humidity,
+        0
+      ) / data.list.length;
+
+    const totalRainfall = data.list.reduce(
+      (sum: number, item: any) => sum + (item.rain?.["3h"] || 0),
+      0
+    );
+
+    return {
+      humidity: Math.round(humidityAvg),
+      rainfall: Math.round(totalRainfall),
+    };
+
+  } catch (error) {
+    console.log("Weather fetch failed:", error);
+    return { humidity: 50, rainfall: 0 };
   }
 }
+
+/* ---------------- MAIN API ---------------- */
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -30,14 +54,28 @@ export async function POST(req: Request) {
     );
   }
 
-  const humidity = await getWeatherImpact(city);
+  const weather = await getWeatherData(city);
+  const humidity = weather.humidity;
+  const rainfall = weather.rainfall;
+
   const storageModifier = storageType === "cold" ? 0.5 : 1;
 
   const results = realMandiData
-    .filter((market) => market.crop.toLowerCase() === crop.toLowerCase())
+    .filter((market) =>
+      market.crop.toLowerCase() === crop.toLowerCase()
+    )
     .map((market) => {
 
-      const climateFactor = humidity > 70 ? -120 : 60;
+      /* -------- CLIMATE FACTOR -------- */
+
+      let climateFactor = 0;
+
+      if (rainfall > 40) climateFactor -= 150;
+      else if (rainfall < 5) climateFactor += 80;
+
+      if (humidity > 75) climateFactor -= 60;
+
+      /* -------- PRICE MODEL -------- */
 
       const predictedPrice =
         market.basePrice * market.trend + climateFactor;
@@ -54,71 +92,65 @@ export async function POST(req: Request) {
       const netProfit =
         predictedPrice - spoilagePenalty - transportCost;
 
-      // 🟢 PRESERVATION RANKING ENGINE
+      /* -------- PRESERVATION ENGINE -------- */
 
-      // Dynamic preservation logic
-
-let baseRisk = spoilagePenalty / 100; // normalized risk score
+     const baseRisk = spoilagePenalty / 10;
 
 const preservationOptions = [
   {
     method: "Cold Storage",
     cost: 400,
-    riskReduction: Math.min(60, Math.round(baseRisk * 1.5))
+    riskReduction: Math.min(60, Math.round(baseRisk * 1.4))
   },
   {
     method: "Local Market Sale",
     cost: 150,
-    riskReduction: Math.min(40, Math.round(baseRisk * 1.0))
+    riskReduction: Math.min(40, Math.round(baseRisk))
   },
   {
     method: "Immediate Sale",
     cost: 0,
-    riskReduction: Math.min(25, Math.round(baseRisk * 0.7))
+    riskReduction: Math.min(25, Math.round(baseRisk * 0.6))
   }
 ]
 .map(option => ({
   ...option,
-  rankScore: (option.riskReduction * 2) - (option.cost / 10)
+  rankScore: (option.riskReduction * 3) - (option.cost / 20)
 }))
 .sort((a, b) => b.rankScore - a.rankScore);
-// CONFIDENCE SCORE
 
-// SMART CONFIDENCE SCORE
+      /* -------- CONFIDENCE SCORE -------- */
 
-let confidenceScore = 80;
+      let confidenceScore = 85;
 
-// 1️⃣ Weather impact strength
-confidenceScore -= Math.abs(humidity - 50) * 0.2;
+      confidenceScore -= Math.abs(humidity - 50) * 0.2;
+      confidenceScore -= Math.abs(market.trend - 1) * 100;
+      confidenceScore -= distance * 0.02;
+      confidenceScore -= spoilagePenalty * 0.01;
 
-// 2️⃣ Market volatility (how far from stable 1.0)
-confidenceScore -= Math.abs(market.trend - 1) * 100;
+      confidenceScore = Math.max(
+        40,
+        Math.min(95, Math.round(confidenceScore))
+      );
 
-// 3️⃣ Distance uncertainty
-confidenceScore -= distance * 0.02;
-
-// 4️⃣ High spoilage reduces confidence
-confidenceScore -= spoilagePenalty * 0.01;
-
-// Clamp range
-confidenceScore = Math.max(40, Math.min(95, Math.round(confidenceScore)));
-      // 🟢 HARVEST WINDOW LOGIC
+      /* -------- HARVEST WINDOW -------- */
 
       let harvestAdvice = "";
       let harvestWindow = "";
 
-      if (market.trend > 1.03) {
-        if (humidity > 75) {
-          harvestAdvice = "Harvest immediately due to high humidity risk.";
-          harvestWindow = "Next 1-2 days";
-        } else {
-          harvestAdvice = "Prices rising. Consider waiting.";
-          harvestWindow = "5-7 days";
-        }
-      } else if (market.trend < 0.97) {
-        harvestAdvice = "Market falling. Sell quickly.";
+      if (rainfall > 50) {
+        harvestAdvice = "Heavy rain expected. Harvest immediately.";
+        harvestWindow = "Next 1-2 days";
+      }
+      else if (market.trend > 1.05) {
+        harvestAdvice = "Prices rising. Wait few days.";
+        harvestWindow = "5-7 days";
+      }
+      else if (market.trend < 0.97) {
+        harvestAdvice = "Prices falling. Sell quickly.";
         harvestWindow = "1-3 days";
-      } else {
+      }
+      else {
         harvestAdvice = "Market stable.";
         harvestWindow = "3-5 days";
       }
@@ -138,6 +170,8 @@ confidenceScore = Math.max(40, Math.min(95, Math.round(confidenceScore)));
         harvestWindow,
         confidenceScore,
         preservationOptions,
+        rainfall,
+        humidity,
         score: netProfit
       };
     })

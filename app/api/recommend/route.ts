@@ -15,7 +15,6 @@ async function getWeatherData(city: string) {
     const data = await response.json();
 
     if (data.cod !== "200") {
-      console.log("Weather API error:", data.message);
       return { humidity: 50, rainfall: 0 };
     }
 
@@ -35,11 +34,25 @@ async function getWeatherData(city: string) {
       rainfall: Math.round(totalRainfall),
     };
 
-  } catch (error) {
-    console.log("Weather fetch failed:", error);
+  } catch {
     return { humidity: 50, rainfall: 0 };
   }
 }
+
+/* ---------------- SOIL ENGINE ---------------- */
+
+const soilIndexMap: Record<string, number> = {
+  Nagpur: 8,
+  Pune: 7,
+  Nashik: 7,
+  Mumbai: 6,
+  Kolhapur: 8,
+  Amarawati: 7,
+  Jalgaon: 6,
+  Nanded: 6,
+  Sholapur: 5,
+  "Chattrapati Sambhajinagar": 6,
+};
 
 /* ---------------- MAIN API ---------------- */
 
@@ -55,6 +68,8 @@ export async function POST(req: Request) {
   }
 
   const weather = await getWeatherData(city);
+  const soilIndex = soilIndexMap[city] || 6;
+
   const humidity = weather.humidity;
   const rainfall = weather.rainfall;
 
@@ -75,10 +90,20 @@ export async function POST(req: Request) {
 
       if (humidity > 75) climateFactor -= 60;
 
-      /* -------- PRICE MODEL -------- */
+      /* -------- SOIL IMPACT -------- */
+
+      let soilFactor = 0;
+
+      if (soilIndex >= 8) soilFactor = -100;
+      else if (soilIndex <= 5) soilFactor = +80;
+      else soilFactor = -30;
+
+      /* -------- FINAL PRICE -------- */
 
       const predictedPrice =
-        market.basePrice * market.trend + climateFactor;
+        market.basePrice * market.trend +
+        climateFactor +
+        soilFactor;
 
       const distance = market.distance;
       const transitDays = market.transitDays;
@@ -94,30 +119,30 @@ export async function POST(req: Request) {
 
       /* -------- PRESERVATION ENGINE -------- */
 
-     const baseRisk = spoilagePenalty / 10;
+      const baseRisk = spoilagePenalty / 10;
 
-const preservationOptions = [
-  {
-    method: "Cold Storage",
-    cost: 400,
-    riskReduction: Math.min(60, Math.round(baseRisk * 1.4))
-  },
-  {
-    method: "Local Market Sale",
-    cost: 150,
-    riskReduction: Math.min(40, Math.round(baseRisk))
-  },
-  {
-    method: "Immediate Sale",
-    cost: 0,
-    riskReduction: Math.min(25, Math.round(baseRisk * 0.6))
-  }
-]
-.map(option => ({
-  ...option,
-  rankScore: (option.riskReduction * 3) - (option.cost / 20)
-}))
-.sort((a, b) => b.rankScore - a.rankScore);
+      const preservationOptions = [
+        {
+          method: "Cold Storage",
+          cost: 400,
+          riskReduction: Math.min(60, Math.round(baseRisk * 1.4))
+        },
+        {
+          method: "Local Market Sale",
+          cost: 150,
+          riskReduction: Math.min(40, Math.round(baseRisk))
+        },
+        {
+          method: "Immediate Sale",
+          cost: 0,
+          riskReduction: Math.min(25, Math.round(baseRisk * 0.6))
+        }
+      ]
+      .map(option => ({
+        ...option,
+        rankScore: (option.riskReduction * 3) - (option.cost / 20)
+      }))
+      .sort((a, b) => b.rankScore - a.rankScore);
 
       /* -------- CONFIDENCE SCORE -------- */
 
@@ -127,6 +152,9 @@ const preservationOptions = [
       confidenceScore -= Math.abs(market.trend - 1) * 100;
       confidenceScore -= distance * 0.02;
       confidenceScore -= spoilagePenalty * 0.01;
+
+      // Soil improves confidence slightly
+      confidenceScore += soilIndex * 0.5;
 
       confidenceScore = Math.max(
         40,
@@ -172,6 +200,7 @@ const preservationOptions = [
         preservationOptions,
         rainfall,
         humidity,
+        soilIndex,
         score: netProfit
       };
     })

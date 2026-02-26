@@ -6,7 +6,7 @@ import { useState } from "react";
 export default function Home() {
   const [formData, setFormData] = useState({
     crop: "",
-    region: "",
+    city: "",
     soilQuality: "",
     storageType: "",
     harvestDate: "",
@@ -35,7 +35,23 @@ export default function Home() {
 
       <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded shadow">
         <input name="crop" placeholder="Crop" onChange={handleChange} className="w-full p-2 border rounded" />
-        <input name="region" placeholder="Region" onChange={handleChange} className="w-full p-2 border rounded" />
+        <select
+  name="city"
+  onChange={handleChange}
+  className="w-full p-2 border rounded"
+>
+  <option value="">Select Nearest City</option>
+  <option value="Mumbai">Mumbai</option>
+  <option value="Pune">Pune</option>
+  <option value="Nagpur">Nagpur</option>
+  <option value="Nashik">Nashik</option>
+  <option value="Kolhapur">Kolhapur</option>
+  <option value="Aurangabad">Aurangabad</option>
+  <option value="Solapur">Solapur</option>
+  <option value="Amravati">Amravati</option>
+  <option value="Nanded">Nanded</option>
+  <option value="Jalgaon">Jalgaon</option>
+</select>
         <input name="soilQuality" placeholder="Soil Quality (1-10)" onChange={handleChange} className="w-full p-2 border rounded" />
         <select name="storageType" onChange={handleChange} className="w-full p-2 border rounded">
           <option value="">Select Storage Type</option>

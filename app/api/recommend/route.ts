@@ -1,28 +1,26 @@
 import { NextResponse } from "next/server";
 import { mandiData } from "@/app/data/mandiData";
 
-// Fetch humidity instead of rain (more stable for demo)
-async function getWeatherImpact(region: string) {
+async function getWeatherImpact(city: string) {
   try {
     const apiKey = process.env.OPENWEATHER_API_KEY;
 
     if (!apiKey) {
       console.log("No API key found. Using fallback.");
-      return 50; // fallback humidity
+      return 50;
     }
 
     const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${region},IN&appid=${apiKey}`
+      `https://api.openweathermap.org/data/2.5/weather?q=${city},IN&appid=${apiKey}`
     );
 
     const data = await response.json();
 
     if (data.cod !== 200) {
       console.log("Weather API error:", data.message);
-      return 50; // fallback humidity
+      return 50;
     }
 
-    // Use humidity (always exists)
     return data.main?.humidity || 50;
 
   } catch (error) {
@@ -33,9 +31,25 @@ async function getWeatherImpact(region: string) {
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { crop, soilQuality, storageType, region } = body;
+  const { crop, soilQuality, storageType, city } = body;
 
-  const humidity = await getWeatherImpact(region);
+  // Map city to region
+  const cityRegionMap: Record<string, string> = {
+    Mumbai: "West",
+    Pune: "West",
+    Nashik: "North",
+    Nagpur: "East",
+    Kolhapur: "South",
+    Solapur: "South",
+    Aurangabad: "Central",
+    Amravati: "East",
+    Jalgaon: "North",
+    Nanded: "East",
+  };
+
+  const region = cityRegionMap[city] || "";
+
+  const humidity = await getWeatherImpact(city);
   console.log("Humidity:", humidity);
 
   const soilFactor = Number(soilQuality) / 10;
@@ -48,7 +62,6 @@ export async function POST(req: Request) {
     )
     .map((market) => {
 
-      // Climate impact using humidity
       const climateFactor = humidity > 70 ? -120 : 60;
 
       const predictedPrice =
@@ -61,7 +74,7 @@ export async function POST(req: Request) {
         market.transitDays * 120 * storageModifier;
 
       const transportCost =
-        market.distance * 2; // ₹2 per km
+        market.distance * 2;
 
       const netProfit =
         predictedPrice - spoilagePenalty - transportCost;

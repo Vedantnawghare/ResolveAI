@@ -133,7 +133,7 @@ Fully available in:
 
 All UI elements, dropdowns, summaries, and outputs change dynamically.
 
----
+-----------------------------------------------------------------------------------------------
 
  📱 Designed For Low-End Android Phones
 
@@ -144,7 +144,7 @@ All UI elements, dropdowns, summaries, and outputs change dynamically.
 - Mobile-first UI  
 - APK-ready web app  
 
----
+------------------------------------------------------------------------------------------------
 
  🖥 Tech Stack
 

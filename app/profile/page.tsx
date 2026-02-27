@@ -67,4 +67,6 @@ export default function Profile() {
       </motion.div>
     </div>
   );
-}
+} 
+
+// done with frontend :)

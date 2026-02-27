@@ -6,36 +6,70 @@ import { realMandiData } from "@/app/data/realMandiData";
 async function getWeatherData(city: string) {
   try {
     const apiKey = process.env.OPENWEATHER_API_KEY;
-    if (!apiKey) return { humidity: 50, rainfall: 0 };
+
+    if (!apiKey) {
+      return {
+        humidity: 50,
+        rainfall: 0,
+        rainfallTrend: [],
+      };
+    }
 
     const response = await fetch(
       `https://api.openweathermap.org/data/2.5/forecast?q=${city},IN&appid=${apiKey}&units=metric`
     );
 
-    const data = await response.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = await response.json();
 
-    if (data.cod !== "200") {
-      return { humidity: 50, rainfall: 0 };
+    if (!data || data.cod !== "200" || !data.list) {
+      return {
+        humidity: 50,
+        rainfall: 0,
+        rainfallTrend: [],
+      };
     }
 
-    const humidityAvg =
-      data.list.reduce(
-        (sum: number, item: any) => sum + item.main.humidity,
-        0
-      ) / data.list.length;
+    // Safe fallback values
+    let humidityAvg = 50;
+    let totalRainfall = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let rainfallTrend: any[] = [];
 
-    const totalRainfall = data.list.reduce(
-      (sum: number, item: any) => sum + (item.rain?.["3h"] || 0),
-      0
-    );
+    if (data.list.length > 0) {
+      humidityAvg =
+        data.list.reduce(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (sum: number, item: any) =>
+            sum + (item.main?.humidity || 0),
+          0
+        ) / data.list.length;
+
+      totalRainfall = data.list.reduce(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (sum: number, item: any) =>
+          sum + (item.rain?.["3h"] || 0),
+        0
+      );
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rainfallTrend = data.list.slice(0, 8).map((item: any) => ({
+        time: item.dt_txt,
+        rainfall: item.rain?.["3h"] || 0,
+      }));
+    }
 
     return {
       humidity: Math.round(humidityAvg),
       rainfall: Math.round(totalRainfall),
+      rainfallTrend,
     };
-
-  } catch {
-    return { humidity: 50, rainfall: 0 };
+  } catch (error) {
+    return {
+      humidity: 50,
+      rainfall: 0,
+      rainfallTrend: [],
+    };
   }
 }
 
@@ -138,11 +172,11 @@ export async function POST(req: Request) {
           riskReduction: Math.min(25, Math.round(baseRisk * 0.6))
         }
       ]
-      .map(option => ({
-        ...option,
-        rankScore: (option.riskReduction * 3) - (option.cost / 20)
-      }))
-      .sort((a, b) => b.rankScore - a.rankScore);
+        .map(option => ({
+          ...option,
+          rankScore: (option.riskReduction * 3) - (option.cost / 20)
+        }))
+        .sort((a, b) => b.rankScore - a.rankScore);
 
       /* -------- CONFIDENCE SCORE -------- */
 
@@ -192,8 +226,8 @@ export async function POST(req: Request) {
           spoilagePenalty < 200
             ? "Low"
             : spoilagePenalty < 400
-            ? "Medium"
-            : "High",
+              ? "Medium"
+              : "High",
         harvestAdvice,
         harvestWindow,
         confidenceScore,
@@ -201,6 +235,7 @@ export async function POST(req: Request) {
         rainfall,
         humidity,
         soilIndex,
+        rainfallTrend: weather.rainfallTrend,
         score: netProfit
       };
     })
